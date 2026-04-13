@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sensitive credentials - never commit these
+credentials.json
+token.json
+data/pdfs/
+
+# commit public/data/*.json (transaction data for the dashboard)

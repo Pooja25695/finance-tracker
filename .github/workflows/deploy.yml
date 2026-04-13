@@ -1,0 +1,53 @@
+name: Deploy Finance Tracker
+
+# WHEN does this run?
+# Every time you push code to the main branch
+on:
+  push:
+    branches: [main]
+
+# WHAT does it do?
+jobs:
+  deploy:
+    runs-on: ubuntu-latest   # GitHub gives us a free Linux machine to run this
+
+    # Permission to publish to GitHub Pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      # Step 1: Download your code onto the GitHub machine
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Step 3: Install dependencies (npm install)
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Build the static site (npm run build → creates out/ folder)
+      - name: Build
+        run: npm run build
+
+      # Step 5: Upload the out/ folder to GitHub Pages
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out/
+
+      # Step 6: Publish it — makes it live at your URL
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

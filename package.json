@@ -9,13 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^1.8.0",
     "next": "16.2.3",
+    "pdf-parse": "^2.4.5",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
