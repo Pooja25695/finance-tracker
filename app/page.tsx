@@ -66,9 +66,10 @@ export default function Dashboard() {
   useEffect(() => {
     async function load() {
       try {
+        const base = process.env.NODE_ENV === 'production' ? '/finance-tracker' : '';
         const [txRes, cardRes] = await Promise.all([
-          fetch('/data/transactions.json'),
-          fetch('/data/cards.json'),
+          fetch(`${base}/data/transactions.json`),
+          fetch(`${base}/data/cards.json`),
         ]);
         if (txRes.ok) setTransactions(await txRes.json());
         if (cardRes.ok) setCards(await cardRes.json());
