@@ -1,0 +1,4 @@
+[
+  {"id":"discover-1","bank_name":"Discover","card_name":"Discover Card","last_four":"","currency":"USD","color":"#f97316","created_at":"2024-01-01T00:00:00.000Z"},
+  {"id":"hdfc-1","bank_name":"HDFC","card_name":"HDFC Credit Card","last_four":"","currency":"INR","color":"#8b5cf6","created_at":"2024-01-01T00:00:00.000Z"}
+]
