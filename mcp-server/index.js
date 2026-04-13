@@ -61,10 +61,10 @@ function extractText(payload) {
 }
 
 // ── Fetch emails ───────────────────────────────────────────────────────────
-async function fetchStatementEmails(auth, maxEmails) {
+async function fetchStatementEmails(auth, maxEmails, afterDate, beforeDate) {
   const gmail = google.gmail({ version: 'v1', auth });
 
-  const query = [
+  const baseQuery = [
     'from:discover',
     'from:hdfc',
     'subject:"credit card statement"',
@@ -73,16 +73,34 @@ async function fetchStatementEmails(auth, maxEmails) {
     'subject:"account statement"',
   ].join(' OR ');
 
-  const listRes = await gmail.users.messages.list({
-    userId: 'me',
-    q: query,
-    maxResults: maxEmails,
-  });
+  // Gmail date filter: after:YYYY/MM/DD before:YYYY/MM/DD
+  const dateParts = [];
+  if (afterDate)  dateParts.push(`after:${afterDate.replace(/-/g, '/')}`);
+  if (beforeDate) dateParts.push(`before:${beforeDate.replace(/-/g, '/')}`);
+  const query = dateParts.length
+    ? `(${baseQuery}) ${dateParts.join(' ')}`
+    : baseQuery;
 
-  const messages = listRes.data.messages || [];
+  // Paginate — Gmail API maxResults is capped at 500 per page
+  const PAGE_SIZE = 500;
+  const messages = [];
+  let pageToken = undefined;
+
+  do {
+    const listRes = await gmail.users.messages.list({
+      userId: 'me',
+      q: query,
+      maxResults: Math.min(PAGE_SIZE, maxEmails - messages.length),
+      ...(pageToken ? { pageToken } : {}),
+    });
+    const batch = listRes.data.messages || [];
+    messages.push(...batch);
+    pageToken = listRes.data.nextPageToken;
+  } while (pageToken && messages.length < maxEmails);
+
   const results = [];
 
-  for (const msg of messages) {
+  for (const msg of messages.slice(0, maxEmails)) {
     const full = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
     const headers = full.data.payload?.headers || [];
     const subject = headers.find(h => h.name === 'Subject')?.value || '';
@@ -117,6 +135,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             description: 'Max emails to fetch (default: 20)',
             default: 20,
           },
+          after_date: {
+            type: 'string',
+            description: 'Fetch emails after this date (YYYY-MM-DD). Uses Gmail after: filter.',
+          },
+          before_date: {
+            type: 'string',
+            description: 'Fetch emails before this date (YYYY-MM-DD). Uses Gmail before: filter.',
+          },
         },
       },
     },
@@ -126,8 +152,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === 'fetch_statement_emails') {
     const auth = getAuth();
-    const max = request.params.arguments?.max_emails || 20;
-    const emails = await fetchStatementEmails(auth, max);
+    const max        = request.params.arguments?.max_emails  || 20;
+    const afterDate  = request.params.arguments?.after_date  || null;
+    const beforeDate = request.params.arguments?.before_date || null;
+    const emails = await fetchStatementEmails(auth, max, afterDate, beforeDate);
     return {
       content: [{ type: 'text', text: JSON.stringify(emails, null, 2) }],
     };
